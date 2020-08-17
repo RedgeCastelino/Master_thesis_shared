@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Export-Package: vehicle_control;version="0.0.0";uses:="org.ros.interna
+ l.message,std_msgs"
+Bundle-SymbolicName: org.ros.rosjava_messages.vehicle_control
+Bundle-Version: 0.0.0
+Bundle-Name: vehicle_control
+Bundle-ManifestVersion: 2
+Bnd-LastModified: 1596615853000
+Import-Package: org.ros.internal.message,std_msgs;version="[0.5,1)"
+Created-By: 1.8.0_222 (AdoptOpenJDK)
+Tool: Bnd-2.1.0.20130426-122213
+

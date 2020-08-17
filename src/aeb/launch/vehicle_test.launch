@@ -1,0 +1,8 @@
+<launch>
+ 
+  <param name = "Veh_yaw" type = "double" value = "0.0"/>       <!-- Orientation of the ego on the Map Frame [°] -->
+  <node pkg="aeb" type = "aeb_test.py" name="aeb_test" output="screen"/>
+  <node pkg="vehicle_control" type = "vehicle_test.py" name="Vehicle_test" output="screen" />
+ 
+</launch>
+

@@ -1,0 +1,52 @@
+<launch>
+ 
+<!--   -->
+
+  <group ns="/sensor0">
+
+	<param name = "posx" type = "double" value = "0.0"/> <!-- Meters -->
+	<param name = "posy" type = "double" value = "0.0"/> <!-- Meters -->
+	<param name = "angle" type = "double" value = "180"/> <!-- Field of view in grad -->
+	<param name = "senrange" type = "double" value = "100"/>  <!-- Meters -->
+	<param name = "yaw" type = "double" value = "0.0"/>
+  	
+
+	<param name = "sensortype" type = "double" value = "5"/> <!-- enter 0:radar , 1:camera/Lidar, 5:Ideal sensor -->
+	
+
+	<param name = "rangerr" type = "double" value = "0.2"/> <!-- For radar only -->
+	<param name = "velerr" type = "double" value = "0.1"/> <!-- For radar only -->
+	<param name = "azierr" type = "double" value = "0.1"/> <!-- For radar only -->
+	<param name = "posxerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
+	<param name = "posyerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
+	
+	<!-- Change below 2 param values prefix to group name -->
+
+	<param name = "name" type = "str" value = "/sensor0/obj_list" /> 
+	<param name = "egodataname" type = "str" value = "/sensor0/ego_data" /> 
+	
+	
+	<node pkg="sensor_model" type = "sensor_model.py" name="sensor0" output="screen"   />
+	<node name="Sensor2Ego" pkg="sensor_model" type="sensor2Ego.py"   />
+	
+	
+  </group>
+
+  <param name = "fw_acc" type = "double" value = "0.5"/>       <!-- Deceleration provided by a normal driver [m/s^2] -->
+  <param name = "stg1_acc" type = "double" value = "2.0"/>     <!-- Deceleration provided by the first severity stage [m/s^2] 2.0-->
+  <param name = "stg2_acc" type = "double" value = "3.0"/>     <!-- Deceleration provided by the second severity stage [m/s^2] 3.0--> 
+  <param name = "stg3_acc" type = "double" value = "5.0"/>     <!-- Deceleration provided by the third severity stage [m/s^2] 5.0-->
+  <param name = "driver_react" type = "double" value = "1.2"/>  <!-- Reaction time of a normal driver [s] -->
+  <param name = "aeb_react" type = "double" value = "0.5"/>    <!-- Reaction time of the AEB system [s] -->
+  <param name = "offsetx" type = "double" value = "5.0"/>      <!-- Offset kept as safety between the follower and the leader [m] 3.7-->
+  <param name = "lat_rang" type = "double" value = "8.0"/>     <!-- Lateral range of evaluation [m] 1.5-->
+
+  <node pkg="aeb" type = "aeb.py" name="aeb" output="screen"/>
+  <node pkg="object_list" type = "CARLAOSIbridge.py" name="CARLA_bridge" />
+  <node pkg="vehicle_control" type = "vehicle.py" name="simulated_vehicle" output="screen"/>
+  <node pkg="object_list" type = "CARLAOSIbridge_update.py" name="CARLAOSI_bridge_update"/>
+
+
+ 
+</launch>
+

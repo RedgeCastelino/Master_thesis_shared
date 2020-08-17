@@ -1,0 +1,49 @@
+<launch>
+<!--
+  <arg name="pox" default="48.78462542" />
+  <arg name="posy" default="11.47318943" />
+  <arg name="angle" default="25" />
+  <arg name="senrange" value="1.4" />
+  <arg name="yaw" value="60.5" />
+  <arg name="rangerr" value="0.52" />
+  <arg name="velerr" value="0.1" />
+  <arg name="azierr" value="0.2" />
+  </include>
+
+-->
+ <!--   -->
+  <group ns="/sensor0">
+	<node pkg ="tf" type="static_transform_publisher" name="fixedframe" args = "3 2 0 0.785 0 0 /fixed sensor0 100"/>
+	<param name = "posx" type = "double" value = "5.02"/>
+	<param name = "posy" type = "double" value = "2.1"/>
+	<param name = "angle" type = "double" value = "65.78"/> <!-- Field of view -->
+	<param name = "senrange" type = "double" value = "1.4"/> 
+	<param name = "yaw" type = "double" value = "60.5"/>  <!-- Field of view -->
+	<param name = "rangerr" type = "double" value = "0.52"/>
+	<param name = "velerr" type = "double" value = "0.1"/>
+	<param name = "azierr" type = "double" value = "0.2"/>
+
+
+  	<node pkg="sensor_model" type = "sensor_model.py" name="sensor0" output="screen"/>
+  	
+  </group>
+
+  <group ns="/sensor1">
+
+	<param name = "posx" type = "double" value = "-4.78"/>
+	<param name = "posy" type = "double" value = "-1.4"/>
+	<param name = "angle" type = "double" value = "65.78"/>
+	<param name = "senrange" type = "double" value = "1.4"/>
+	<param name = "yaw" type = "double" value = "60.5"/>
+	<param name = "rangerr" type = "double" value = "6.6"/>
+	<param name = "velerr" type = "double" value = "5.0471976"/>
+	<param name = "azierr" type = "double" value = "4.5"/>
+
+  	<node pkg="sensor_model" type = "sensor_model.py" name="sensor1" output="screen"/>
+  	
+  </group>
+
+  <node name="OSI_ROS_dummy" pkg="object_list" type="OSI_ROS_dummy.py" />
+  
+</launch>
+

@@ -1,0 +1,36 @@
+<launch>
+
+ <!--   -->
+
+  <node name="OSI_ROS_dummy" pkg="object_list" type="OSI_ROS_dummy.py" />
+
+  <node pkg="sensor_model" type = "sensor_model.py" name="sensor_model"/>
+
+  <param name = "fw_acc" type = "double" value = "2.5"/>       <!-- Deceleration provided by a normal driver [m/s^2] -->
+  <param name = "stg1_acc" type = "double" value = "2.0"/>     <!-- Deceleration provided by the first severity stage [m/s^2] -->
+  <param name = "stg2_acc" type = "double" value = "3.0"/>     <!-- Deceleration provided by the second severity stage [m/s^2] --> 
+  <param name = "stg3_acc" type = "double" value = "5.0"/>     <!-- Deceleration provided by the third severity stage [m/s^2] -->
+  <param name = "driver_react" type = "double" value = "1.2"/>  <!-- Reaction time of a normal driver [s] -->
+  <param name = "aeb_react" type = "double" value = "0.5"/>    <!-- Reaction time of the AEB system [s] -->
+  <param name = "offsetx" type = "double" value = "3.7"/>      <!-- Offset kept as safety between the follower and the leader [m] -->
+  <param name = "lat_rang" type = "double" value = "1.5"/>     <!-- Lateral range of evaluation [m] -->
+
+  <node pkg="aeb" type = "aeb.py" name="aeb" output="screen"/>
+
+  <!-- <group ns="/sensor1">
+
+	<param name = "posx" type = "double" value = "0"/>
+	<param name = "posy" type = "double" value = "0"/>
+	<param name = "angle" type = "double" value = "0"/>
+	<param name = "senrange" type = "double" value = "1.4"/>
+	<param name = "yaw" type = "double" value = "60.5"/>
+	<param name = "rangerr" type = "double" value = "6.6"/>
+	<param name = "velerr" type = "double" value = "5.0471976"/>
+	<param name = "azierr" type = "double" value = "4.5"/>
+
+  	<node pkg="sensor_model" type = "sensor_model.py" name="sensor1" output="screen"/>
+  	
+  </group> -->
+
+</launch>
+

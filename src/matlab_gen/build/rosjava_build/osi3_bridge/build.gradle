@@ -1,0 +1,14 @@
+/*
+ * Copyright 2015 The MathWorks, Inc.
+ */
+
+try {
+    project.catkin.tree.generateMessageArtifact(project, 'osi3_bridge')
+} catch (NullPointerException e) {
+    println("Couldn't find osi3_bridge on the ROS_PACKAGE_PATH")
+}
+
+task bugfixtask << {
+    mkdir sourceSets.main.output.classesDir
+}
+jar.dependsOn(bugfixtask)

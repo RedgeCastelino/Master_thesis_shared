@@ -1,0 +1,6 @@
+<launch>
+    <param name="listen_port" value="22222" type="int" />
+    <param name="loop_rate" value="13" type="int" />
+    
+    <node name="osi_to_ros" pkg="osi3_bridge" type="osi3_bridge_publisher" output="screen" />
+</launch>
