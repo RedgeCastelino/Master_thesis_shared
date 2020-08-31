@@ -36,12 +36,16 @@ for i in range(1000):
 
 def sensor_rotate():
     # Node initialization
+
     rospy.init_node('sensor2ego', anonymous=False)  # Start node
-    rate = rospy.Rate(100)
+    rate = rospy.Rate(rospy.get_param("freq"))
     # subscribe to sensor data and ego data with time synchronization
-    ego_data = message_filters.Subscriber('/ego_data', TrafficUpdateMovingObject)
+    if rospy.get_param("matlab") == 0:
+        ego_data = message_filters.Subscriber('ego_data', TrafficUpdateMovingObject)
+    elif rospy.get_param("matlab") == 1:
+        ego_data = message_filters.Subscriber('/ego_data', TrafficUpdateMovingObject) #maikol pls confirm msg name from matlab function
     objs_list = message_filters.Subscriber('objs_list', ObjectsList)
-    ts = message_filters.ApproximateTimeSynchronizer([ego_data, objs_list], 20, 20)
+    ts = message_filters.ApproximateTimeSynchronizer([ego_data, objs_list],10,10)
     #ts = message_filters.TimeSynchronizer([ego_data, objs_list], 10)
     ts.registerCallback(callback)
 
@@ -82,6 +86,15 @@ def callback(ego_data,objs_list):
 
         # rotate objects list from sensor to ego frame
         new_objs_list = vector_rotate(objs_list)
+        for i, a in enumerate(objs_list.obj_list):
+            #change relative to absolute velocities
+            a.geometric.vx += egoveh.vel.x
+            a.geometric.vy += egoveh.vel.y
+            a.geometric.ax += egoveh.acc.x
+            a.geometric.ay += egoveh.acc.y
+
+
+
     pub.publish(new_objs_list)
 
 def vector_rotate(objs_list):
@@ -115,6 +128,7 @@ def vector_rotate(objs_list):
         [a.geometric.ax, a.geometric.ay] = rotate(a.geometric.ax, a.geometric.ay, sens.rot.yaw)
         a.geometric.x = a.geometric.x + sens.pos.x
         a.geometric.y = a.geometric.y + sens.pos.y
+        a.geometric.yaw += sens.rot.yaw #confirm + or -
     return objs_list
 
 
@@ -127,7 +141,7 @@ def kalman(objs_list):
     global oldob # old objects list
     global xnm1 # current state vector x[n|n-1] estimate given all previous measurements (n = time instance)
 
-
+    yaw = egoveh.newyaw
     if rospy.get_param("sensortype") == 1:
         #For Camera
         for i,a in enumerate(objs_list.obj_list):
@@ -138,13 +152,22 @@ def kalman(objs_list):
                 x.newtime= float(str(objs_list.header.stamp.nsecs))/1000000000
                 x.oldtime=  x.newtime
                 t = 0.1
-                #kinematic model
-                x.a = np.array([[1,t,t*t/2,0,0,0],[0,1,t,0,0,0],[0,0,1,0,0,0],[0,0,0,1,t,t*t/2],[0,0,0,0,1,t],[0,0,0,0,0,1]])
+
+                #kinematic model #trying const yaw rate model
+                x.a = np.array([[np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2,np.sin(yaw),t*np.sin(yaw),t*t*np.sin(yaw)/2],[0,np.cos(yaw),t*np.cos(yaw),0,np.sin(yaw),t*np.sin(yaw)],[0,0,np.cos(yaw),0,0,np.sin(yaw)],[-np.sin(yaw),-t*np.sin(yaw),-t*t*np.sin(yaw)/2,np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2],[0,-np.sin(yaw),-t*np.sin(yaw),0,np.cos(yaw),t*np.cos(yaw)],[0,0,-np.sin(yaw),0,0,np.cos(yaw)]])
+                x.b = np.array([[-t*np.cos(yaw),-t*t*np.cos(yaw)/2,-t*np.sin(yaw),-t*t*np.sin(yaw)/2],[0,0,0,0],[0,0,0,0],[t*np.sin(yaw),t*t*np.sin(yaw),-t*np.cos(yaw),-t*t*np.cos(yaw)],[0,0,0,0],[0,0,0,0]])
                 #state vector estimate givel all measurememnts including preent measurement
                 x.xnn = np.array([[a.geometric.x], [a.geometric.vx], [a.geometric.ax], [a.geometric.y],[a.geometric.vy],[a.geometric.ay]])
-                #error model
-                x.g = np.array([[t*t*t/6,0],[t*t/2,0],[t,0],[0,t*t*t/6],[0,t*t/2],[0,t]])
-
+                #error model #trying const yaw rate model
+                x.g = np.array([[t * t * t * np.cos(yaw) / 6, -t * t * t * np.cos(yaw) / 6, t * t * t * np.sin(yaw) / 6,
+                                 -t * t * t * np.sin(yaw) / 6],
+                                [t * t * np.cos(yaw) / 2, 0, t * t * np.sin(yaw) / 2, 0],
+                                [t * np.cos(yaw), 0, t * np.sin(yaw), 0],
+                                [-t * t * t * np.sin(yaw) / 6, t * t * t * np.sin(yaw) / 6,
+                                 -t * t * t * np.cos(yaw) / 6, -t * t * t * np.cos(yaw) / 6],
+                                [-t * t * np.sin(yaw) / 2, 0, t * t * np.cos(yaw) / 2, 0],
+                                [-t * np.sin(yaw), 0, t * np.cos(yaw), 0]])
+                x.u = np.array([[egoveh.vel.x], [egoveh.acc.x],[egoveh.vel.y],[egoveh.acc.y]])
             else:
                 x.newtime = float(str(objs_list.header.stamp.nsecs))/1000000000
                 t = x.newtime-x.oldtime
@@ -153,24 +176,38 @@ def kalman(objs_list):
                     x.track = 1
                     x.newtime= float(str(objs_list.header.stamp))
                     t=0.1
-                    x.a = np.array(
-                        [[1, t, t * t / 2, 0, 0, 0], [0, 1, t, 0, 0, 0], [0, 0, 1, 0, 0, 0], [0, 0, 0, 1, t, t * t / 2],
-                         [0, 0, 0, 0, 1, t], [0, 0, 0, 0, 0, 1]])
+                    x.a = np.array([[np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2,np.sin(yaw),t*np.sin(yaw),t*t*np.sin(yaw)/2],[0,np.cos(yaw),t*np.cos(yaw),0,np.sin(yaw),t*np.sin(yaw)],[0,0,np.cos(yaw),0,0,np.sin(yaw)],[-np.sin(yaw),-t*np.sin(yaw),-t*t*np.sin(yaw)/2,np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2],[0,-np.sin(yaw),-t*np.sin(yaw),0,np.cos(yaw),t*np.cos(yaw)],[0,0,-np.sin(yaw),0,0,np.cos(yaw)]])
+                    x.b = np.array(
+                        [[-t * np.cos(yaw), -t * t * np.cos(yaw) / 2, -t * np.sin(yaw), -t * t * np.sin(yaw) / 2],
+                         [0, 0, 0, 0], [0, 0, 0, 0],
+                         [t * np.sin(yaw), t * t * np.sin(yaw), -t * np.cos(yaw), -t * t * np.cos(yaw)], [0, 0, 0, 0],
+                         [0, 0, 0, 0]])
                     x.xnn = np.array(
                         [[a.geometric.x], [a.geometric.vx], [a.geometric.ax], [a.geometric.y], [a.geometric.vy],
                          [a.geometric.ay]])
-                    x.g = np.array([[t * t * t / 6, 0], [t * t / 2, 0], [t, 0], [0, t * t * t / 6], [0, t * t / 2], [0, t]])
+                    x.g = np.array([[t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.sin(yaw)/6],[t*t*np.cos(yaw)/2,0,t*t*np.sin(yaw)/2,0],[t*np.cos(yaw),0,t*np.sin(yaw),0],[-t*t*t*np.sin(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6],[-t*t*np.sin(yaw)/2,0,t*t*np.cos(yaw)/2,0],[-t*np.sin(yaw),0,t*np.cos(yaw),0]])
 
-                x.a = np.array([[1,t,t*t/2,0,0,0],[0,1,t,0,0,0],[0,0,1,0,0,0],[0,0,0,1,t,t*t/2],[0,0,0,0,1,t],[0,0,0,0,0,1]])
-                x.g = np.array([[t*t*t/6,0],[t*t/2,0],[t,0],[0,t*t*t/6],[0,t*t/2],[0,t]])
+                x.a = np.array([[np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2,np.sin(yaw),t*np.sin(yaw),t*t*np.sin(yaw)/2],[0,np.cos(yaw),t*np.cos(yaw),0,np.sin(yaw),t*np.sin(yaw)],[0,0,np.cos(yaw),0,0,np.sin(yaw)],[-np.sin(yaw),-t*np.sin(yaw),-t*t*np.sin(yaw)/2,np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2],[0,-np.sin(yaw),-t*np.sin(yaw),0,np.cos(yaw),t*np.cos(yaw)],[0,0,-np.sin(yaw),0,0,np.cos(yaw)]])
+                x.b = np.array(
+                    [[-t * np.cos(yaw), -t * t * np.cos(yaw) / 2, -t * np.sin(yaw), -t * t * np.sin(yaw) / 2],
+                     [0, 0, 0, 0], [0, 0, 0, 0],
+                     [t * np.sin(yaw), t * t * np.sin(yaw), -t * np.cos(yaw), -t * t * np.cos(yaw)], [0, 0, 0, 0],
+                     [0, 0, 0, 0]])
+                x.g = np.array([[t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.sin(yaw)/6],
+                                [t*t*np.cos(yaw)/2,0,t*t*np.sin(yaw)/2,0],
+                                [t*np.cos(yaw),0,t*np.sin(yaw),0],
+                                [-t*t*t*np.sin(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6],
+                                [-t*t*np.sin(yaw)/2,0,t*t*np.cos(yaw)/2,0],
+                                [-t*np.sin(yaw),0,t*np.cos(yaw),0]])
+                x.u = np.array([[egoveh.vel.x], [egoveh.acc.x], [egoveh.vel.y], [egoveh.acc.y]])
                 x.oldtime =  x.newtime
 
             x.yn = np.array([[a.geometric.x], [a.geometric.y]]) # column vector
 
-            x.xn_nm1 =x.a.dot(x.xnn) #+ x.b.dot(x.u) #column vector
-
+            x.xn_nm1 =x.a.dot(x.xnn) + x.b.dot(x.u) #column vector
+            #print(x.g)
             x.pn_nm1 = (x.a.dot(x.pnn)).dot(x.a.transpose()) +(x.g.dot(x.c_s)).dot(x.g.transpose())
-            x.gamma_n = x.yn -x.c.dot(x.xn_nm1)
+            x.gamma_n = x.yn -x.c.dot(x.xn_nm1) - x.d.dot(x.u)
             x.s_n = (x.c.dot(x.pn_nm1)).dot(x.c.transpose()) + x.c_m
             x.k_n = (x.pn_nm1.dot(x.c.transpose())).dot(np.linalg.inv(x.s_n))
             x.xnn = x.xn_nm1 + x.k_n.dot(x.gamma_n)
@@ -193,7 +230,11 @@ def kalman(objs_list):
     elif rospy.get_param("sensortype") == 0:
     #FOR RADAR
         for i, a in enumerate(objs_list.obj_list):
-
+            #convert relative velocities/acceleration to absolute as input for kalman filter
+            #a.geometric.vx += egoveh.vel.x
+            #a.geometric.vy += egoveh.vel.y
+            #a.geometric.ax += egoveh.acc.x
+            #a.geometric.ay += egoveh.acc.y
 
             x = KFlist[a.obj_id]
 
@@ -204,12 +245,16 @@ def kalman(objs_list):
                 x.oldtime = x.newtime
                 t = 0.1
 
-                x.a = np.array(
-                    [[1, t, t * t / 2, 0, 0, 0], [0, 1, t, 0, 0, 0], [0, 0, 1, 0, 0, 0], [0, 0, 0, 1, t, t * t / 2],
-                     [0, 0, 0, 0, 1, t], [0, 0, 0, 0, 0, 1]])
+                x.a = np.array([[np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2,np.sin(yaw),t*np.sin(yaw),t*t*np.sin(yaw)/2],[0,np.cos(yaw),t*np.cos(yaw),0,np.sin(yaw),t*np.sin(yaw)],[0,0,np.cos(yaw),0,0,np.sin(yaw)],[-np.sin(yaw),-t*np.sin(yaw),-t*t*np.sin(yaw)/2,np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2],[0,-np.sin(yaw),-t*np.sin(yaw),0,np.cos(yaw),t*np.cos(yaw)],[0,0,-np.sin(yaw),0,0,np.cos(yaw)]])
+                x.b = np.array(
+                    [[-t * np.cos(yaw), -t * t * np.cos(yaw) / 2, -t * np.sin(yaw), -t * t * np.sin(yaw) / 2],
+                     [0, 0, 0, 0], [0, 0, 0, 0],
+                     [t * np.sin(yaw), t * t * np.sin(yaw), -t * np.cos(yaw), -t * t * np.cos(yaw)], [0, 0, 0, 0],
+                     [0, 0, 0, 0]])
                 x.xnn = np.array([[a.geometric.x], [a.geometric.vx], [a.geometric.ax], [a.geometric.y], [a.geometric.vy],
                                   [a.geometric.ay]])
-                x.g = np.array([[t * t * t / 6, 0], [t * t / 2, 0], [t, 0], [0, t * t * t / 6], [0, t * t / 2], [0, t]])
+                x.g = np.array([[t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.sin(yaw)/6],[t*t*np.cos(yaw)/2,0,t*t*np.sin(yaw)/2,0],[t*np.cos(yaw),0,t*np.sin(yaw),0],[-t*t*t*np.sin(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6],[-t*t*np.sin(yaw)/2,0,t*t*np.cos(yaw)/2,0],[-t*np.sin(yaw),0,t*np.cos(yaw),0]])
+                x.u = np.array([[egoveh.vel.x], [egoveh.acc.x], [egoveh.vel.y], [egoveh.acc.y]])
 
             else:
                 x.newtime = float(str(objs_list.header.stamp.nsecs)) / 1000000000
@@ -219,33 +264,38 @@ def kalman(objs_list):
                     x.track = 1
                     x.newtime = float(str(objs_list.header.stamp))
                     t = 0.1
-                    x.a = np.array(
-                        [[1, t, t * t / 2, 0, 0, 0], [0, 1, t, 0, 0, 0], [0, 0, 1, 0, 0, 0], [0, 0, 0, 1, t, t * t / 2],
-                         [0, 0, 0, 0, 1, t], [0, 0, 0, 0, 0, 1]])
+                    x.a = np.array([[np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2,np.sin(yaw),t*np.sin(yaw),t*t*np.sin(yaw)/2],[0,np.cos(yaw),t*np.cos(yaw),0,np.sin(yaw),t*np.sin(yaw)],[0,0,np.cos(yaw),0,0,np.sin(yaw)],[-np.sin(yaw),-t*np.sin(yaw),-t*t*np.sin(yaw)/2,np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2],[0,-np.sin(yaw),-t*np.sin(yaw),0,np.cos(yaw),t*np.cos(yaw)],[0,0,-np.sin(yaw),0,0,np.cos(yaw)]])
+                    x.b = np.array(
+                        [[-t * np.cos(yaw), -t * t * np.cos(yaw) / 2, -t * np.sin(yaw), -t * t * np.sin(yaw) / 2],
+                         [0, 0, 0, 0], [0, 0, 0, 0],
+                         [t * np.sin(yaw), t * t * np.sin(yaw), -t * np.cos(yaw), -t * t * np.cos(yaw)], [0, 0, 0, 0],
+                         [0, 0, 0, 0]])
                     x.xnn = np.array(
                         [[a.geometric.x], [a.geometric.vx], [a.geometric.ax], [a.geometric.y], [a.geometric.vy],
                          [a.geometric.ay]])
-                    x.g = np.array([[t * t * t / 6, 0], [t * t / 2, 0], [t, 0], [0, t * t * t / 6], [0, t * t / 2], [0, t]])
-
-                x.a = np.array(
-                    [[1, t, t * t / 2, 0, 0, 0], [0, 1, t, 0, 0, 0], [0, 0, 1, 0, 0, 0], [0, 0, 0, 1, t, t * t / 2],
-                     [0, 0, 0, 0, 1, t], [0, 0, 0, 0, 0, 1]])
+                    x.g = np.array([[t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.sin(yaw)/6],[t*t*np.cos(yaw)/2,0,t*t*np.sin(yaw)/2,0],[t*np.cos(yaw),0,t*np.sin(yaw),0],[-t*t*t*np.sin(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6],[-t*t*np.sin(yaw)/2,0,t*t*np.cos(yaw)/2,0],[-t*np.sin(yaw),0,t*np.cos(yaw),0]])
+                    x.u = np.array([[egoveh.vel.x], [egoveh.acc.x], [egoveh.vel.y], [egoveh.acc.y]])
+                x.a = np.array([[np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2,np.sin(yaw),t*np.sin(yaw),t*t*np.sin(yaw)/2],[0,np.cos(yaw),t*np.cos(yaw),0,np.sin(yaw),t*np.sin(yaw)],[0,0,np.cos(yaw),0,0,np.sin(yaw)],[-np.sin(yaw),-t*np.sin(yaw),-t*t*np.sin(yaw)/2,np.cos(yaw),t*np.cos(yaw),t*t*np.cos(yaw)/2],[0,-np.sin(yaw),-t*np.sin(yaw),0,np.cos(yaw),t*np.cos(yaw)],[0,0,-np.sin(yaw),0,0,np.cos(yaw)]])
+                x.b = np.array(
+                    [[-t * np.cos(yaw), -t * t * np.cos(yaw) / 2, -t * np.sin(yaw), -t * t * np.sin(yaw) / 2],
+                     [0, 0, 0, 0], [0, 0, 0, 0],
+                     [t * np.sin(yaw), t * t * np.sin(yaw), -t * np.cos(yaw), -t * t * np.cos(yaw)], [0, 0, 0, 0],
+                     [0, 0, 0, 0]])
                 # x.g = np.array([[0, 0], [0, 0], [t, 0], [0, 0], [0, 0], [0, 0]])
-                x.g = np.array([[t * t * t / 6, 0], [t * t / 2, 0], [t, 0], [0, t * t * t / 6], [0, t * t / 2], [0, t]])
-
+                x.g = np.array([[t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.sin(yaw)/6],[t*t*np.cos(yaw)/2,0,t*t*np.sin(yaw)/2,0],[t*np.cos(yaw),0,t*np.sin(yaw),0],[-t*t*t*np.sin(yaw)/6,t*t*t*np.sin(yaw)/6,-t*t*t*np.cos(yaw)/6,-t*t*t*np.cos(yaw)/6],[-t*t*np.sin(yaw)/2,0,t*t*np.cos(yaw)/2,0],[-t*np.sin(yaw),0,t*np.cos(yaw),0]])
+                x.u = np.array([[egoveh.vel.x], [egoveh.acc.x], [egoveh.vel.y], [egoveh.acc.y]])
                 x.oldtime = x.newtime
 
-            x.yn = np.array([[a.geometric.x], [a.geometric.y],[a.geometric.vx],[a.geometric.vy]])  # column vector
+            x.yn = np.array([[a.geometric.x],[a.geometric.vx], [a.geometric.y],[a.geometric.vy]])  # column vector
 
-            x.xn_nm1 = x.a.dot(x.xnn)  # + x.b.dot(x.u) #column vector
+            x.xn_nm1 = x.a.dot(x.xnn)   + x.b.dot(x.u) #column vector
 
             x.pn_nm1 = (x.a.dot(x.pnn)).dot(x.a.transpose()) + (x.g.dot(x.c_s)).dot(x.g.transpose())
-            x.gamma_n = x.yn - x.c.dot(x.xn_nm1)
+            x.gamma_n = x.yn - x.c.dot(x.xn_nm1) - x.d.dot(x.u)
             x.s_n = (x.c.dot(x.pn_nm1)).dot(x.c.transpose()) + x.c_m
 
             x.k_n = (x.pn_nm1.dot(x.c.transpose())).dot(np.linalg.inv(x.s_n))
             x.xnn = x.xn_nm1 + x.k_n.dot(x.gamma_n)
-
 
 
             I = np.zeros((6, 6), int)
@@ -261,8 +311,7 @@ def kalman(objs_list):
             a.geometric.ay = x.xnn[5]
             a.covariance = x.pnn.flatten()
 
-        # print(x.track)
-        oldob = objs_list
+        #   oldob = objs_list
         return (objs_list)
 
 if __name__ == '__main__':

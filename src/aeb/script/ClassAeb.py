@@ -1,4 +1,5 @@
 import rospy
+import numpy as np
 
 ## Inicialize the Aeb class
 class Acc:
@@ -27,5 +28,30 @@ class Aeb:
         self.offset = rospy.get_param("offsetx") #3.7                ## Offset kept as safety between the follower and the leader [m]
         self.ttc = 0.0  ## start as null
         self.stoptime = Stoptime()
+        self.des_vel = rospy.get_param("des_vel")/3.6
+        self.final_time = rospy.get_param("max_traj_time")
+        self.time_step = 1 / rospy.get_param("freq")
+        self.amount_data = int(self.final_time / self.time_step)     ## Calculate the amount of data to the trajectory
+        self.timesteparray = np.linspace(self.time_step, self.final_time, num=self.amount_data)  ##
+        self.x = 0
+        self.y = 0
+        self.yaw = 0
+        self.status = 0
+        self.last_status = 0
+
+
+class Features:
+    def __init__(self):
+
+        self.FL = 0.0
+        self.FM = 0.0
+        self.FR = 0.0
+        self.MR = 0.0
+        self.RR = 0.0
+        self.RM = 0.0
+        self.RL = 0.0
+        self.ML = 0.0
+
+
 
 

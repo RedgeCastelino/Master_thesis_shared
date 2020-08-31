@@ -148,8 +148,8 @@ def listener():
     
 
     #rospy.Subscriber("chatter", String, callback)
-    rospy.Subscriber('/sensor0/afterKF', ObjectsList, callback_simulation)
-    rospy.Subscriber('/sensor0/ego_data', TrafficUpdateMovingObject, callback_egovehicle)
+    rospy.Subscriber('/sensor0/', ObjectsList, callback_simulation)
+    rospy.Subscriber('/ego_data', TrafficUpdateMovingObject, callback_egovehicle)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()

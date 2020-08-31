@@ -117,7 +117,7 @@ function ego_data = find_ego(osi_objs)
         end
     end
     ego_data.Object = osi_objs.Objects(IDpos);
-    ego_data.Header.Stamp = osi_objs.Header.Stamp;
+    ego_data.Header.Stamp = rostime("now");
     ego_data.Header.FrameId = "EGO";
     [ego_data.Object.Velocity.X, ego_data.Object.Velocity.Y] = rotate(ego_data.Object.Velocity.X, ego_data.Object.Velocity.Y,ego_data.Object.Orientation.Yaw);
     [ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y] = rotate(ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,ego_data.Object.Orientation.Yaw);

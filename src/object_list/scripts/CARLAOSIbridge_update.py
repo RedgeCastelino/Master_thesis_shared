@@ -45,7 +45,7 @@ def CARLA_OSI_ROS():
 
     # Initiate ROS node
     rospy.init_node('CARLAOSI_update', anonymous=False)  # Start node
-    rate = rospy.Rate(25)  # Define the node frequency 100hz
+    rate = rospy.Rate(rospy.get_param("freq") )  # Define the node frequency 100hz
     rospy.Subscriber("/osi3_traffic_update", TrafficUpdateMovingObject, set_ego)
     rospy.spin()
 

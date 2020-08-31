@@ -12,7 +12,7 @@ m=100;
 %Psi=pi()/4;       % current yaw angle of EGO            ((1x1) scalar)
 Psi=0.3;
 max_time=2;
-rtraj=linspace(0,3,m);
+rtraj=linspace(0,22.22,m);
 Xtraj=rtraj*cos(Psi);    % Trajectory x-points                 ((1xm) vector)
 Ytraj=rtraj*sin(Psi);    % Trajectory y-points                 ((1xm) vector)
 
@@ -21,7 +21,7 @@ rYtraj=Ytraj;
 PsiTraj=linspace(Psi,Psi,m);   % Trajectory yaw angle                ((1xm) vector)
 tTraj=linspace(0,max_time,m);  % Trajectory time_stamp               ((1xm) vector)
 time_step=max_time/m
-vel=rtraj(1,m)/tTraj(1,m);
+vel=rtraj(1,m)/tTraj(1,m)
 vTraj=linspace(vel,vel,m);     % Trajectory velocity                 ((1xm) vector)
 % 
 rX=0;        % current x-point of EGO              ((1x1) scalar)
@@ -52,7 +52,7 @@ vectime=linspace(0,0,max);
         %v_vec(i) = v;
         %ax_vec(i)= ax;
         
-        if i == 2500
+        if i >= 2500
             rXtraj=linspace(rX,rX,m);    % Trajectory x-points                 ((1xm) vector)
             rYtraj= linspace(rY,rY,m); 
             vel=0.0;
@@ -60,7 +60,7 @@ vectime=linspace(0,0,max);
         end
             
 
-        [rXnew,rYnew,vnew,axnew,aynew,Psinew] = AMS_Simulation_Model_3_mex(rXtraj, rYtraj, vTraj, PsiTraj, tTraj, rX, rY, Psi, v, ax, ay,tTraj(1));
+        [rXnew,rYnew,vnew,axnew,aynew,Psinew] = AMS_Simulation_Model_4_mex(rXtraj, rYtraj, vTraj, PsiTraj, tTraj, rX, rY, Psi, v, ax, ay,tTraj(1));
         
         calc_v = (rXnew-rX)/time_step;
         rX=rXnew;
@@ -76,6 +76,7 @@ vectime=linspace(0,0,max);
             v = 0.01;
         end
         %fprintf(' Position x %i Velocity x %i Acceleration x %i \n',rX, v,ax)
+        
         vecv(i)=v;
         vecacc(i)=ax;
         vecx(i)=rX;
@@ -83,9 +84,12 @@ vectime=linspace(0,0,max);
         vecaccy(i)=ay;
         vec_calc_v(i)=calc_v;
         %pause(0.01)
+        
         tTraj=tTraj+time_step;  % Trajectory time_stamp               ((1xm) vector)
+        
         rXtraj=rX+Xtraj;
         rYtraj=rY+Ytraj;
+        
         
         i=i+1;
         time=toc;

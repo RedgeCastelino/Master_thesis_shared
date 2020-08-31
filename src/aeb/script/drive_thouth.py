@@ -9,7 +9,6 @@ import time
 from object_list.msg import ObjectsList
 from osi3_bridge.msg import TrafficUpdateMovingObject
 from vehicle_control.msg import Trajectory
-from std_msgs.msg import Int32
 
 # import class with aeb parameters
 from ClassAeb import Aeb
@@ -71,36 +70,36 @@ def callback(ego, obj_list):
 
     #print(ego.object.position.x )
     ## Calculate AEB
-    if near_obj != 9999:
+    if near_obj == 9999:
         [aeb_data,reldist] = calculate_aeb(egovx, obj_list.obj_list[near_obj],aeb_data)
     ## Definition of actual condition
         if aeb_data.offset >= abs(reldist) and obj_list.obj_list[near_obj].geometric.vx <=0.5:
-            print ("Stop")
+            #print ("Stop")
             aeb_data.status = 3
             vel_aux = np.full(aeb_data.amount_data + 1, 0)
         elif aeb_data.offset >= abs(reldist) and obj_list.obj_list[near_obj].geometric.vx > 0.5:
-            print ("Following")
+            #print ("Following")
             aeb_data.status = 4
             vel_aux = np.full(aeb_data.amount_data+1,obj_list.obj_list[near_obj].geometric.vx)
         elif (abs(aeb_data.ttc) < aeb_data.stoptime.stage3) and (aeb_data.ttc < 0):
-            print("Stage 3 is on")
+            #print("Stage 3 is on")
             aeb_data.status = 3
-            vel_aux = np.full(aeb_data.amount_data + 1, 0)
-            #vel_aux = velocity_calculation(egovx,aeb_data.acc.stage3,aeb_data.time_step,aeb_data.amount_data)
+            #vel_aux = np.full(aeb_data.amount_data + 1, 0)
+            vel_aux = velocity_calculation(egovx,aeb_data.acc.stage3,aeb_data.time_step,aeb_data.amount_data)
         elif (abs(aeb_data.ttc) < aeb_data.stoptime.stage2) and (aeb_data.ttc < 0):
-            print("Stage 2 is on")
+            #print("Stage 2 is on")
             aeb_data.status = 2
             vel_aux = velocity_calculation(egovx,aeb_data.acc.stage2,aeb_data.time_step,aeb_data.amount_data)
         elif (abs(aeb_data.ttc) < aeb_data.stoptime.stage1) and (aeb_data.ttc < 0):
-            print("Stage 1 is on")
+            #print("Stage 1 is on")
             aeb_data.status = 1
             vel_aux = velocity_calculation(egovx,aeb_data.acc.stage1,aeb_data.time_step,aeb_data.amount_data)
         elif (abs(aeb_data.ttc) < aeb_data.stoptime.fw) and (aeb_data.ttc < 0):
             aeb_data.status = 5
-            print("FW is on")
+            #print("FW is on")
             vel_aux = np.full(aeb_data.amount_data+1, aeb_data.des_vel)
         else:
-            print("AEB is off")
+            #print("AEB is off")
             aeb_data.status = 0
             ## keep the expected velocity
             vel_aux = np.full(aeb_data.amount_data + 1, aeb_data.des_vel)
@@ -109,11 +108,11 @@ def callback(ego, obj_list):
         #print("relative distance ", reldist)
         #print("relative velocity ", obj_list.obj_list[near_obj].geometric.vx - egovx)
     elif ego.object.position.x > 240:
-        print("End of the Test")
+        #print("End of the Test")
         vel_aux = np.full(aeb_data.amount_data + 1, 0)
         aeb_data.status = 3
     else:
-        print("AEB is off, out of range")
+        #print("AEB is off")
         aeb_data.status = 0
         ## keep the expected velocity
         vel_aux = np.full(aeb_data.amount_data + 1, aeb_data.des_vel)
@@ -141,8 +140,6 @@ def callback(ego, obj_list):
     #return Traj
     pub = rospy.Publisher('trajectory', Trajectory, queue_size=10,latch=True)
     pub.publish(Traj)
-    pub_aeb = rospy.Publisher ('aeb_status',Int32,queue_size=10)
-    pub_aeb.publish(aeb_data.status)
     #rate = rospy.Rate(25)  # Define the node frequency 100hz
     #rate.sleep()
 

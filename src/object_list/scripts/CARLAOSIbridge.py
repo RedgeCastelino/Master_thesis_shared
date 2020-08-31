@@ -48,9 +48,8 @@ def CARLA_OSI_ROS():
     #Start ROS node
     pub = rospy.Publisher('osi3_moving_obj', GroundTruthMovingObjects, queue_size=10)  #
     rospy.init_node('osi3_bridge',anonymous=False)  # Initiate the node camera and anonymous true permit opening this node a lot of time including number in the end of the node name
-    rate = rospy.Rate(100)  # 100 hz
-
-
+    rate = rospy.Rate(rospy.get_param("freq") )  # 100 hz
+    #rate = rospy.Rate(0.1)  # 100 hz
 
     cameras = world.get_actors().filter('sensor.camera.rgb')
     cc = carla.ColorConverter.CityScapesPalette

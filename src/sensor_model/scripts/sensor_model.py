@@ -2,6 +2,8 @@
 import numpy as np
 import rospy
 import math
+import message_filters
+import matplotlib.pyplot as plt
 
 # import all necessary ROS messages
 from object_list.msg import ObjectList, ObjectsList
@@ -37,12 +39,24 @@ counter = 0
 def sensor_model():
     # Node initialization
     rospy.init_node('sensor_model_ideal', anonymous=False)  # Start node
-    rate = rospy.Rate(100)  # Define the node frequency 100hz
-
-    # Subscriber the data in callback function
+    rate = rospy.Rate(rospy.get_param("freq"))  # Define the node frequency 100hz
     rospy.Subscriber("/osi3_moving_obj", GroundTruthMovingObjects, callback)
-
     rospy.spin()  # spin() simply keeps python from exiting until this node is stopped
+
+def sensor_model_ego():
+    rospy.init_node('sensor_model_ideal', anonymous=False)  # Start node
+    # Subscriber the data in callback function
+    ego_data = message_filters.Subscriber("/ego_data", TrafficUpdateMovingObject)
+    osi_objs = message_filters.Subscriber("/osi3_moving_obj", GroundTruthMovingObjects)
+    ts = message_filters.ApproximateTimeSynchronizer([ego_data, osi_objs], 10, 10)
+    # ts = message_filters.TimeSynchronizer([ego_data, objs_list], 10)
+    ts.registerCallback(callback2)
+    rospy.spin()  # spin() simply keeps python from exiting until this node is stopped
+
+def callback2(ego_data,osi_objs):
+    global ego_dataCOPY
+    ego_dataCOPY = ego_data
+    callback(osi_objs)
 
 
 def callback(osi_objs):
@@ -63,7 +77,7 @@ def callback(osi_objs):
     otime=ntime
 
 def find_ego (osi_objs):
-
+    global ego_dataCOPY
     # find the smaller id number inside the list
     ID=osi_objs.objects[0].id
     IDpos=0
@@ -73,10 +87,15 @@ def find_ego (osi_objs):
             IDpos = i
 
     #Assign the object with smaller ID to EGO
-    ego = osi_objs.objects[IDpos]
+    if rospy.get_param("matlab") == 0:
+        ego = osi_objs.objects[IDpos]
 
-    #Assign all other ID's to the obj_list
+    else:
+        ego = ego_dataCOPY.object
+    # Assign all other ID's to the obj_list
+
     osi_objs_noego = [x for x in osi_objs.objects if not x.id == ID]
+
 
     return [ego, osi_objs_noego]
 
@@ -126,7 +145,7 @@ def data_process (ego,osi_objs_noego,header):
         elif osi_objs_noego[i].orientation.yaw > math.pi:
             osi_objs_noego[i].orientation.yaw -= 2*math.pi
 
-
+        # changed to absolute , real sensor should add ego velocity and give overground velocity/objs of objects
         # Rotate and Translate the object velocity from map to sensor (Relative Velocity)
         osi_objs_noego[i].velocity.x = osi_objs_noego[i].velocity.x - ego.velocity.x
         osi_objs_noego[i].velocity.y = osi_objs_noego[i].velocity.y - ego.velocity.y
@@ -145,18 +164,18 @@ def data_process (ego,osi_objs_noego,header):
         if features_check == 1: # Just entities inside FOV
 
             ## Include statistical errors on
-            osi_objs_noego[i] = include_sens_error (osi_objs_noego[i],osi_old[i])
+            osi_objs_noego[i] = include_sens_error (osi_objs_noego[i])
             ## Initialize the Object list
             obj_list= ObjectList()
 
             ## fullfil object list
-            obj_list.geometric.x = osi_objs_noego[i].position.x
-            obj_list.geometric.y = osi_objs_noego[i].position.y
-            obj_list.geometric.vx = osi_objs_noego[i].velocity.x
-            obj_list.geometric.vy = osi_objs_noego[i].velocity.y
-            obj_list.geometric.ax = osi_objs_noego[i].acceleration.x
-            obj_list.geometric.ay = osi_objs_noego[i].acceleration.y
-            obj_list.geometric.yaw = osi_objs_noego[i].orientation.yaw
+            obj_list.geometric.x = osi_objs_noego[i].position.x #relative
+            obj_list.geometric.y = osi_objs_noego[i].position.y #relative
+            obj_list.geometric.vx = osi_objs_noego[i].velocity.x #relative
+            obj_list.geometric.vy = osi_objs_noego[i].velocity.y #relative
+            obj_list.geometric.ax = osi_objs_noego[i].acceleration.x #relative
+            obj_list.geometric.ay = osi_objs_noego[i].acceleration.y #relative
+            obj_list.geometric.yaw = osi_objs_noego[i].orientation.yaw #- (ego.orientation.yaw +sens.rot.yaw)
 
             obj_list.obj_id=osi_objs_noego[i].id
 
@@ -190,21 +209,21 @@ def data_process (ego,osi_objs_noego,header):
                 obj_list.geometric.yawrate = (osi_objs_noego[i].orientation.yaw - osi_old[i].orientation.yaw) / t
             else:
                 obj_list.geometric.yawrate = 0
-
+            #obj_list.geometric.yaw -= egoyaw
             objs_list.obj_list.append(obj_list)
 
     count=1
 
 # Publish the object list
-    pub = rospy.Publisher("objs_list", ObjectsList, queue_size=10)
+    pub = rospy.Publisher("objs_list", ObjectsList, queue_size=10,latch=True)
     pub.publish(objs_list)
     osi_old = osi_objs_noego
-    #public_ego(ego,header)
+    public_ego(ego,header)
     return
 
 def public_ego(ego,header):
+    global egoyaw #ego orientation in map frame (dont forget redge and maikol)
 
-    
     ego_data = TrafficUpdateMovingObject()
     ego_data.header.stamp = header.stamp
     ego_data.header.frame_id = "EGO"
@@ -213,12 +232,16 @@ def public_ego(ego,header):
     ego_data.object = ego
     [ego_data.object.velocity.x, ego_data.object.velocity.y] = rotate(ego.velocity.x,ego.velocity.y,-ego.orientation.yaw)
     [ego_data.object.acceleration.x, ego_data.object.acceleration.y] = rotate(ego.acceleration.x,ego.acceleration.y,-ego.orientation.yaw)
+    egoyaw= ego.orientation.yaw
 
-    pub = rospy.Publisher('ego_data', TrafficUpdateMovingObject, queue_size=10)
-    pub.publish(ego_data)
+    if rospy.get_param("matlab") == 0:
+    #print(ego_data)
+        pub = rospy.Publisher('ego_data', TrafficUpdateMovingObject, queue_size=10)
+        pub.publish(ego_data)
 
 
-def include_sens_error (new,old):
+
+def include_sens_error (new):
     global osi_old
 
     # FOR CAMERA OR LIDAR
@@ -272,11 +295,14 @@ def include_sens_error (new,old):
         new.position.x = range * np.cos(azi)
         new.position.y = range * np.sin(azi)
         #new.velocity.x = v * np.cos(azi)
-        new.velocity.y = v * np.sin(azi)
+        if new.velocity.y < 0:
+            new.velocity.y = -abs(v * np.sin(azi))
+        else:
+            new.velocity.y = abs(v * np.sin(azi))
         if new.velocity.x <0 :
-            new.velocity.x = -v * np.cos(azi)
+            new.velocity.x = -abs(v * np.cos(azi))
         else :
-            new.velocity.x = v * np.cos(azi)
+            new.velocity.x = abs(v * np.cos(azi))
         new.acceleration.x = 0
         new.acceleration.y = 0
     return new
@@ -371,4 +397,7 @@ def foo(x,y):
 
 
 if __name__ == '__main__':
-    sensor_model()
+    if rospy.get_param("matlab") == 0:
+        sensor_model()
+    else:
+        sensor_model_ego()

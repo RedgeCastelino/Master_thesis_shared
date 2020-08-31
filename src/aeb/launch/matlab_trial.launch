@@ -2,44 +2,62 @@
  
 <!--   -->
 
+  <!--arg name="model" default="$(find object_list)/urdf/prius.urdf"/-->
+  <!--arg name="gui" default="false" /-->
+  <!--arg name="rvizconfig" default="$(find object_list)/rviz/urdf.rviz" /-->
+  <!--arg name="groundtruth" default="true" /-->
+  <!--arg name="camera" default="false" /-->
+
+  <!--param name="robot_description" command="$(find xacro)/xacro $(arg model)" /-->
+
+  <!--node if="$(arg gui)" name="joint_state_publisher" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" /-->
+  <!--node unless="$(arg gui)" name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /-->
+  <!--node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /-->
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" /-->
+
+  <!--node pkg="object_list" name="Object_Visualization" type="Objectlist_Visualization.py" output="screen" /-->
+
+  <param name = "freq" type = "double" value = "100.0"/>             <!-- Desired frequency of Framework running (ros.rate) [Hz] 100.0-->
+  <param name = "des_vel" type = "double" value = "50.0"/>           <!-- Desired velocity of the EGO [Km/h] 40.0-->
+
+
   <group ns="/sensor0">
 
+   	<param name = "matlab" type = "double" value = "1"/>      <!-- enter 0: Ego_data from Simulation , 1: External Ego_data -->
+	<param name = "freq" type = "double" value = "100.0"/>
 	<param name = "posx" type = "double" value = "0.0"/> <!-- Meters -->
 	<param name = "posy" type = "double" value = "0.0"/> <!-- Meters -->
-	<param name = "angle" type = "double" value = "180"/> <!-- Field of view in grad -->
+	<param name = "angle" type = "double" value = "120"/> <!-- Field of view in grad -->
 	<param name = "senrange" type = "double" value = "100"/>  <!-- Meters -->
 	<param name = "yaw" type = "double" value = "0.0"/>
-  	
+
 
 	<param name = "sensortype" type = "double" value = "5"/> <!-- enter 0:radar , 1:camera/Lidar, 5:Ideal sensor -->
-	
+
 
 	<param name = "rangerr" type = "double" value = "0.2"/> <!-- For radar only -->
 	<param name = "velerr" type = "double" value = "0.1"/> <!-- For radar only -->
 	<param name = "azierr" type = "double" value = "0.1"/> <!-- For radar only -->
 	<param name = "posxerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
 	<param name = "posyerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
-	
-	<!-- Change below 2 param values prefix to group name -->
 
-	<param name = "name" type = "str" value = "/sensor0/obj_list" /> 
-	<param name = "egodataname" type = "str" value = "/sensor0/ego_data" /> 
-	
-	
 	<node pkg="sensor_model" type = "sensor_model.py" name="sensor0"/>
 	<node name="Sensor2Ego" pkg="sensor_model" type="sensor2Ego.py"  />
-	
-	
+
+
   </group>
 
   <param name = "fw_acc" type = "double" value = "4.0"/>       <!-- Deceleration provided by a normal driver [m/s^2] -->
   <param name = "stg1_acc" type = "double" value = "3.0"/>     <!-- Deceleration provided by the first severity stage [m/s^2] 2.0-->
-  <param name = "stg2_acc" type = "double" value = "5.0"/>     <!-- Deceleration provided by the second severity stage [m/s^2] 3.0--> 
-  <param name = "stg3_acc" type = "double" value = "10.0"/>     <!-- Deceleration provided by the third severity stage [m/s^2] 5.0-->
+  <param name = "stg2_acc" type = "double" value = "5.0"/>     <!-- Deceleration provided by the second severity stage [m/s^2] 3.0-->
+  <param name = "stg3_acc" type = "double" value = "9.81"/>     <!-- Deceleration provided by the third severity stage [m/s^2] 5.0-->
   <param name = "driver_react" type = "double" value = "1.2"/>  <!-- Reaction time of a normal driver [s] -->
   <param name = "aeb_react" type = "double" value = "0.5"/>    <!-- Reaction time of the AEB system [s] -->
-  <param name = "offsetx" type = "double" value = "15.0"/>      <!-- Offset kept as safety between the follower and the leader [m] 3.7-->
-  <param name = "lat_rang" type = "double" value = "2.0"/>     <!-- Lateral range of evaluation [m] 1.5-->
+  <param name = "offsetx" type = "double" value = "6.0"/>      <!-- Offset kept as safety between the follower and the leader [m] 3.7-->
+  <param name = "lat_rang" type = "double" value = "1.6"/>     <!-- Lateral range of evaluation [m] 1.5-->
+
+  <param name = "max_traj_time" type = "double" value = "2.0"/>     <!-- Future time send iin the trajectory [s] 10.0-->
+
 
   <node pkg="aeb" type = "aeb.py" name="aeb"  output="screen" />
   <node pkg="object_list" type = "CARLAOSIbridge.py" name="CARLA_bridge" />

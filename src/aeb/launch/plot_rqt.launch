@@ -1,6 +1,7 @@
 <launch>
 
-  <node name="Vehicle_plot" pkg="rqt_plot" type="rqt_plot" args="/ego_data/object/acceleration/x /ego_data/object/acceleration/y /ego_data/object/velocity/x /ego_data/object/velocity/y /ego_data/object/position/x /ego_data/object/position/y  /trajectory/v[1]" />
- 
+  <!--node name="Vehicle_plot" pkg="rqt_plot" type="rqt_plot" args="/ego_data/object/acceleration/x /ego_data/object/acceleration/y /ego_data/object/velocity/x /ego_data/object/velocity/y /ego_data/object/position/x /ego_data/object/position/y  /trajectory/v[1] /aeb_status" /-->
+
+  <node name="Vehicle_plot" pkg="rqt_plot" type="rqt_plot" args="/ego_data/object/acceleration/x /ego_data/object/acceleration/y /ego_data/object/velocity/x /ego_data/object/velocity/y /aeb_status/data" />
 </launch>
 

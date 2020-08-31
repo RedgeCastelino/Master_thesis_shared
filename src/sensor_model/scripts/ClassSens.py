@@ -28,7 +28,7 @@ class Sens:
         self.pos.y = rospy.get_param("posy")
 
         self.rot = Rot()
-        self.rot.yaw = rospy.get_param("yaw")
+        self.rot.yaw = rospy.get_param("yaw")* math.pi/180
 
 class Vel:
     def __init__(self):
@@ -42,7 +42,9 @@ class Acc:
 
 class Ego:
     def __init__(self):
-
+        self.pos = Pos()
+        self.pos.x = 0
+        self.pos.y = 0
         self.vel = Vel()
         self.vel.x =  0
         self.vel.y = 0
@@ -54,6 +56,8 @@ class Ego:
         self.oldyaw = 0
         self.newyaw = 0
         self.yawrate = 0
+        self.testyaw = 0
+        self.testyawrate = 0
 
 class Features:
     def __init__(self):

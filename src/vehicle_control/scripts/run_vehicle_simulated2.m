@@ -6,6 +6,8 @@
 % osi3_bridge/TrafficUpdateMovingObject
 %% Create global data which will be also used inside the callback
 
+clear all
+
 global ego_data;
 global pub;
 global sub;
@@ -58,8 +60,7 @@ end
 
 %function callback(~,traj) %% use with rossubscriber
 function callback(traj,r)
-%function callback(~,~) %% use with timer
-    tic;
+
     global ego_data;
     global pub;
     global osipub;
@@ -77,12 +78,14 @@ function callback(traj,r)
     
     timenow=rostime('now');
     timeNow=timenow.Sec+timenow.Nsec*1e-9;
+    
     %timeNow-traj.Reftime
-    %[ego_data.Object.Position.X,ego_data.Object.Position.Y,ego_data.Object.Velocity.X,ego_data.Object.Acceleration.X,ego_data.Object.Acceleration.Y,ego_data.Object.Orientation.Yaw] = AMS_Simulation_Model_3_mex(traj.X', traj.Y', traj.V', traj.Yaw', traj.Time', ego_data.Object.Position.X, ego_data.Object.Position.Y, ego_data.Object.Orientation.Yaw, v, ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,timeNow-traj.Reftime);  % run Matlab Funtion    
-    [ego_data.Object.Position.X,ego_data.Object.Position.Y,ego_data.Object.Velocity.X,ego_data.Object.Acceleration.X,ego_data.Object.Acceleration.Y,ego_data.Object.Orientation.Yaw] = AMS_Simulation_Model_3_mex(traj.X', traj.Y', traj.V', traj.Yaw', traj.Time', ego_data.Object.Position.X, ego_data.Object.Position.Y, ego_data.Object.Orientation.Yaw, v, ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,traj.Time(1));  % run Matlab Funtion
-    %res = eng.Vehicle(rXtraj, rYtraj, vTraj, PsiTraj, tTraj, rX, rY, 0.0, v, ax, 0.0, nargout=6)  % run Matlab Funtion
-    %res = eng.Vehicle(rXtraj, rYtraj, vTraj, PsiTraj, tTraj, rX, rY, yaw, v, ax, ay, nargout=6)  % run Matlab Funtion
+    %[ego_data.Object.Position.X,ego_data.Object.Position.Y,ego_data.Object.Velocity.X,ego_data.Object.Acceleration.X,ego_data.Object.Acceleration.Y,Yaw] = AMS_Simulation_Model_4_mex(traj.X', traj.Y', traj.V', traj.Yaw', traj.Time', ego_data.Object.Position.X, ego_data.Object.Position.Y, ego_data.Object.Orientation.Yaw, v, ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,timeNow-traj.Reftime);  % run Matlab Funtion    
+    [ego_data.Object.Position.X,ego_data.Object.Position.Y,ego_data.Object.Velocity.X,ego_data.Object.Acceleration.X,ego_data.Object.Acceleration.Y,ego_data.Object.Orientation.Yaw] = AMS_Simulation_Model_4_mex(traj.X', traj.Y', traj.V', traj.Yaw', traj.Time', ego_data.Object.Position.X, ego_data.Object.Position.Y, ego_data.Object.Orientation.Yaw, v, ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,timeNow-traj.Reftime);  % run Matlab Funtion    
+    %[ego_data.Object.Position.X,ego_data.Object.Position.Y,ego_data.Object.Velocity.X,ego_data.Object.Acceleration.X,ego_data.Object.Acceleration.Y,ego_data.Object.Orientation.Yaw] = AMS_Simulation_Model_4_mex(traj.X', traj.Y', traj.V', traj.Yaw', traj.Time', ego_data.Object.Position.X, ego_data.Object.Position.Y, ego_data.Object.Orientation.Yaw, v, ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,traj.Time(1));  % run Matlab Funtion
 
+    fprintf('Velocity: %f  km/h \n', ego_data.Object.Velocity.X*3.6);
+    
     % Update ego_data with the output of the simulated vehicle
     %ego_data.object.orientation.yaw = YAW;    % Updated yaw angle of EGO rad
     ego_data.Header.Stamp = rostime('now');
@@ -92,7 +95,6 @@ function callback(traj,r)
     %%% Create and publish ego_osi which update the position of the vehicle
     %%% on the Simulation
     ego_osi = ego_data;
-    
     % Rotate from EGO to Map frame
     [ego_osi.Object.Velocity.X, ego_osi.Object.Velocity.Y] = rotate(ego_data.Object.Velocity.X,0,0);%-ego_osi.Object.Orientation.Yaw); % Lateral Velocity = 0   Updated velocity of EGO  m/s - Map Frame
     [ego_osi.Object.Acceleration.X, ego_osi.Object.Acceleration.Y] = rotate(ego_data.Object.Acceleration.X,ego_data.Object.Acceleration.Y,0);%-ego_osi.Object.Orientation.Yaw); % Updated accel in y of EGO m/s2 Map Frame
@@ -100,7 +102,6 @@ function callback(traj,r)
     waitfor(r);
     send(osipub,ego_osi);
     
-    toc
 end
 
 
@@ -121,7 +122,7 @@ function ego_data = find_ego(osi_objs)
     ego_data.Header.FrameId = "EGO";
     [ego_data.Object.Velocity.X, ego_data.Object.Velocity.Y] = rotate(ego_data.Object.Velocity.X, ego_data.Object.Velocity.Y,ego_data.Object.Orientation.Yaw);
     [ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y] = rotate(ego_data.Object.Acceleration.X, ego_data.Object.Acceleration.Y,ego_data.Object.Orientation.Yaw);
-
+    
 end
 
 function [rotx,roty] = rotate (x,y,angle)

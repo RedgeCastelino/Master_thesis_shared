@@ -1,0 +1,4 @@
+import numpy as np
+A = np.zeros(7)
+for i in range (8):
+    print A[i]
