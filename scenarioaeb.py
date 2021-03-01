@@ -29,6 +29,7 @@ try:
     from pygame.locals import KMOD_CTRL
     from pygame.locals import K_ESCAPE
     from pygame.locals import K_q
+
 except ImportError:
     raise RuntimeError('cannot import pygame, make sure pygame package is installed')
 

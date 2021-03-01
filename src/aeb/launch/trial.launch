@@ -45,7 +45,8 @@
   <node pkg="object_list" type = "CARLAOSIbridge.py" name="CARLA_bridge" />
   <node pkg="vehicle_control" type = "vehicle.py" name="simulated_vehicle" output="screen"/>
   <node pkg="object_list" type = "CARLAOSIbridge_update.py" name="CARLAOSI_bridge_update"/>
-
+  
+  <node name="fusion" pkg="fusion" type="fusion.py"   />
 
  
 </launch>

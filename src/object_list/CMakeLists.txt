@@ -59,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
    ObjectList.msg
    ObjectsList.msg
    EgoData.msg
+   SensorProperty.msg
  )
 
 ## Generate services in the 'srv' folder

@@ -17,17 +17,112 @@
 
   <!--node pkg="object_list" name="Object_Visualization" type="Objectlist_Visualization.py" output="screen" /-->
 
-  <param name = "freq" type = "double" value = "100.0"/>             <!-- Desired frequency of Framework running (ros.rate) [Hz] 100.0-->
-  <param name = "des_vel" type = "double" value = "50.0"/>           <!-- Desired velocity of the EGO [Km/h] 40.0-->
-
+  <param name = "freq" type = "double" value = "30"/>             <!-- Desired frequency of Framework running (ros.rate) [Hz] 100.0-->
+  <param name = "fusion_process_noise" type = "double" value = "10"/>
+  <param name = "carla_host" type = "string" value = "10.116.64.77" />
+  <param name = "carla_port" type = "string" value = "2000" />
+  <param name = "cam_width" type = "int" value = "1280"/>
+  <param name = "cam_height" type = "int" value = "720"/>
+  <param name = "verbose" type = "int" value = "0"/>
 
   <group ns="/sensor0">
 
-   	<param name = "matlab" type = "double" value = "1"/>      <!-- enter 0: Ego_data from Simulation , 1: External Ego_data -->
-	<param name = "freq" type = "double" value = "100.0"/>
+    <param name = "sensorID" type = "double" value = "0"/> <!-- provide unique int for sensor -->
+	<param name = "freq" type = "double" value = "50"/>
 	<param name = "posx" type = "double" value = "0.0"/> <!-- Meters -->
 	<param name = "posy" type = "double" value = "0.0"/> <!-- Meters -->
-	<param name = "angle" type = "double" value = "120"/> <!-- Field of view in grad -->
+	<param name = "angle" type = "double" value = "180"/> <!-- Field of view in grad -->
+	<param name = "senrange" type = "double" value = "100"/>  <!-- Meters -->
+	<param name = "yaw" type = "double" value = "0.0"/>
+
+
+	<param name = "sensortype" type = "double" value = "1"/> <!-- enter 0:radar , 1:camera/Lidar, 5:Ideal sensor -->
+
+
+	<param name = "rangerr" type = "double" value = "0.1"/> <!-- For radar only -->
+	<param name = "velerr" type = "double" value = "0.1"/> <!-- For radar only -->
+	<param name = "azierr" type = "double" value = "0.03"/> <!-- For radar only -->
+	<param name = "posxerr" type = "double" value = "1"/> <!-- For camera/lidar only -->
+	<param name = "posyerr" type = "double" value = "1"/> <!-- For camera/lidar only -->
+	<param name = "processnoise" type = "double" value = "2"/>
+
+    <param name = "trust_other" type = "double" value = "0.65"/>
+
+
+
+    <param name = "trust_existance" type = "double" value = "1"/>
+	<param name = "max_existance" type = "double" value = "0.9"/>       <!-- % max existance value (0-1) -->
+	<param name = "birth_existance" type = "double" value = "0.3"/>       <!-- % existance birth value (0-1) -->
+    <param name = "max_persistance" type = "double" value = "0.9"/>       <!-- % max persitance value (0-1) -->
+    <param name = "range_max_persistance" type = "double" value = "0.7"/> <!-- % range after which persistance drops (0-1) -->
+
+    <param name = "trust_car" type = "double" value = "0.85"/>
+    <param name = "trust_truck" type = "double" value = "0.7"/>
+    <param name = "trust_motorcycle" type = "double" value = "0.7"/>
+    <param name = "trust_bicycle" type = "double" value = "0.7"/>
+    <param name = "trust_pedestrian" type = "double" value = "0.8"/>
+    <param name = "trust_stationary" type = "double" value = "0.6"/>
+
+
+
+
+
+
+	<node pkg="sensor_model" type = "sensor_model.py" name="radar" />
+	<node name="Sensor2Ego" pkg="sensor_model" type="sensor2Ego.py"  />
+
+
+
+  </group>
+  <group ns="/sensor1">
+
+    <param name = "sensorID" type = "double" value = "1"/> <!-- provide unique int for sensor -->
+	<param name = "freq" type = "double" value = "50"/>
+	<param name = "posx" type = "double" value = "0.0"/> <!-- Meters -->
+	<param name = "posy" type = "double" value = "0.0"/> <!-- Meters -->
+	<param name = "angle" type = "double" value = "180"/> <!-- Field of view in grad -->
+	<param name = "senrange" type = "double" value = "100"/>  <!-- Meters -->
+	<param name = "yaw" type = "double" value = "0"/>
+
+
+	<param name = "sensortype" type = "double" value = "1"/> <!-- enter 0:radar , 1:camera/Lidar, 5:Ideal sensor -->
+
+
+	<param name = "rangerr" type = "double" value = "0.03"/> <!-- For radar only -->
+	<param name = "velerr" type = "double" value = "0.01"/> <!-- For radar only -->
+	<param name = "azierr" type = "double" value = "0.01"/> <!-- For radar only -->
+	<param name = "posxerr" type = "double" value = "1"/> <!-- For camera/lidar only -->
+	<param name = "posyerr" type = "double" value = "0.5"/> <!-- For camera/lidar only -->
+	<param name = "processnoise" type = "double" value = "7"/>
+
+    <param name = "trust_existance" type = "double" value = "1"/>
+	<param name = "max_existance" type = "double" value = "0.8"/>    <!-- % max existance value (0-1) -->
+    <param name = "birth_existance" type = "double" value = "0.6"/> <!-- % exitance birth value (0-1) -->
+    <param name = "max_persistance" type = "double" value = "0.6"/> <!-- % max persitance value (0-1) -->
+    <param name = "range_max_persistance" type = "double" value = "0.7"/> <!-- % range after which persistance drops (0-1) -->
+
+
+    <param name = "trust_car" type = "double" value = "0.75"/>
+    <param name = "trust_truck" type = "double" value = "0.75"/>
+    <param name = "trust_motorcycle" type = "double" value = "0.6"/>
+    <param name = "trust_bicycle" type = "double" value = "0.8"/>
+    <param name = "trust_pedestrian" type = "double" value = "0.75"/>
+    <param name = "trust_stationary" type = "double" value = "0.7"/>
+    <param name = "trust_other" type = "double" value = "0.65"/>
+
+
+
+	<node pkg="sensor_model" type = "sensor_model.py" name="camera"/>
+	<node name="Sensor2Ego" pkg="sensor_model" type="sensor2Ego.py"  />
+
+    </group>
+  <group ns="/sensor5">
+
+    <param name = "sensorID" type = "double" value = "1"/> <!-- provide unique int for sensor -->
+	<param name = "freq" type = "double" value = "50"/>
+	<param name = "posx" type = "double" value = "0.0"/> <!-- Meters -->
+	<param name = "posy" type = "double" value = "0.0"/> <!-- Meters -->
+	<param name = "angle" type = "double" value = "360"/> <!-- Field of view in grad -->
 	<param name = "senrange" type = "double" value = "100"/>  <!-- Meters -->
 	<param name = "yaw" type = "double" value = "0.0"/>
 
@@ -35,15 +130,14 @@
 	<param name = "sensortype" type = "double" value = "5"/> <!-- enter 0:radar , 1:camera/Lidar, 5:Ideal sensor -->
 
 
-	<param name = "rangerr" type = "double" value = "0.2"/> <!-- For radar only -->
-	<param name = "velerr" type = "double" value = "0.1"/> <!-- For radar only -->
+	<param name = "rangerr" type = "double" value = "0.1"/> <!-- For radar only -->
+	<param name = "velerr" type = "double" value = "0.01"/> <!-- For radar only -->
 	<param name = "azierr" type = "double" value = "0.1"/> <!-- For radar only -->
-	<param name = "posxerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
-	<param name = "posyerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
-
-	<node pkg="sensor_model" type = "sensor_model.py" name="sensor0"/>
+	<param name = "posxerr" type = "double" value = "0.4"/> <!-- For camera/lidar only -->
+	<param name = "posyerr" type = "double" value = "0.5"/> <!-- For camera/lidar only -->
+	<param name = "processnoise" type = "double" value = "7"/>
+	<node pkg="sensor_model" type = "sensor_model.py" name="ideal"/>
 	<node name="Sensor2Ego" pkg="sensor_model" type="sensor2Ego.py"  />
-
 
   </group>
 
@@ -58,11 +152,28 @@
 
   <param name = "max_traj_time" type = "double" value = "2.0"/>     <!-- Future time send iin the trajectory [s] 10.0-->
 
+  <param name = "threshold_exist" type = "double" value = "0.2" />
 
-  <node pkg="aeb" type = "aeb.py" name="aeb"  output="screen" />
+
+
+
+
+  <node pkg="sensor_model" type = "ego_reader.py" name = "ego_reader" />
+
+
+
+
+
+  <!--node pkg="rosbag" type="record" name="record" output="screen" args="-a -o $Home/bagfiles/" /-->
+  <!--node pkg="rosbag" type="record" name="robot_bag" args="-a" /-->
+  <node name = "scenario_aeb" pkg = "aeb" type = "scenario_aeb.py" output = "screen" />
   <node pkg="object_list" type = "CARLAOSIbridge.py" name="CARLA_bridge" />
-  <!--node pkg="vehicle_control" type = "vehicle.py" name="simulated_vehicle" output="screen"/-->
-  <node pkg="object_list" type = "CARLAOSIbridge_update.py" name="CARLAOSI_bridge_update"/>
+  <!--node pkg="vehicle_control" type = "vehicle.py" name="simulated_vehicle" /-->
+  <!--node pkg="object_list" type = "CARLAOSIbridge_update.py" name="CARLAOSI_bridge_update"/-->
+  <!--node name ="KFTesting" pkg = "sensor_model" type= "KFtesting.py" output = "screen" /-->
+  <node name ="fusion" pkg = "fusion" type= "fusion.py" />
+  <!--node name = "drive" pkg = "fusion" type ="manual_control.py" output = "screen" /-->
+  <!--node name ="rviz" pkg = "fusion" type= "Debug_markers_obj_list.py"   /-->
 
 
  

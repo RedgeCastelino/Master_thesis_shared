@@ -34,6 +34,7 @@ class KF:
 			self.u = np.array([[0], [0],[0],[0]])
 
 			self.g = np.array([[0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0]])
+
 		elif rospy.get_param("sensortype") == 0:
 			self.sigma2omegax = rospy.get_param("rangerr")
 			self.sigma2omegay = rospy.get_param("rangerr")  # variance noise posy
@@ -70,6 +71,7 @@ class KF:
 		self.newtime= 0
 		self.oldtime= 0
 		self.track= 0
+		self.track2 = 0
 
 class rotatedata:
 	def __init__(self):
@@ -79,3 +81,15 @@ class rotatedata:
 		self.vely = 0
 		self.accx = 0
 		self.accy = 0
+
+
+class Prob():
+	def __init__(self):
+		self.persistance = 1
+		self.existance = 1
+		self.nonexistance = 1
+		self.trust = 1
+		self.previous_persistance = 1
+		self.previousexistance = 1
+		self.previousnonexistance =1
+		self.time_last_update = 0

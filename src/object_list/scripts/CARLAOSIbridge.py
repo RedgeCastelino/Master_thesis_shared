@@ -30,18 +30,21 @@ import carla
 import rospy
 import numpy as np
 import math
+import time
 from cv_bridge import CvBridge
 cv_bridge = CvBridge()
 
 from sensor_msgs.msg import CameraInfo, Image
 from osi3_bridge.msg import GroundTruthMovingObjects, TrafficUpdateMovingObject, MovingObject
 
+time.sleep(3) ## Wait the scenario setting
 
 
 def CARLA_OSI_ROS():
 
     ## Connect with CARLA server
-    client = carla.Client('localhost', 2000)  ### It starts the communication between server and client
+    #client = carla.Client('localhost', 2000)  ### It starts the communication between server and client
+    client = carla.Client('10.116.64.35', 2000)
     client.set_timeout(10.0)  # seconds       ### After 10 seconds without communication with CARLA server the script stops
     world = client.get_world()
 

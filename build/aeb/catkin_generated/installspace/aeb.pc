@@ -1,0 +1,8 @@
+prefix=/home/student/Desktop/Redge_Thesis/vil/install
+
+Name: aeb
+Description: Description of aeb
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -54,7 +54,7 @@ def evaluateClassification(objectClass):
 def evaluateObject(objectData):
     marker = Marker()
     #r, g, b, typ = evaluateColor(evaluateClassification(objectData.classification))
-    marker.header.frame_id = "/world"
+    marker.header.frame_id = "/map"
     
     marker.type = 1
     

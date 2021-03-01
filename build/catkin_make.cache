@@ -1,0 +1,2 @@
+aeb:fusion:object_list:osi3_bridge:sensor_model:vehicle_control
+-DCATKIN_DEVEL_PREFIX=/home/student/Desktop/Redge_Thesis/vil/devel -DCMAKE_INSTALL_PREFIX=/home/student/Desktop/Redge_Thesis/vil/install -G Unix Makefiles

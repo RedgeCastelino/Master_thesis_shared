@@ -1,0 +1,8 @@
+prefix=/home/student/Desktop/Redge_Thesis/vil/install
+
+Name: sensor_model
+Description: Description of sensor_model
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,2 @@
+set(osi3_bridge_MESSAGE_FILES "/home/student/Desktop/Redge_Thesis/vil/src/osi3_bridge/msg/Dimension3d.msg;/home/student/Desktop/Redge_Thesis/vil/src/osi3_bridge/msg/Orientation3d.msg;/home/student/Desktop/Redge_Thesis/vil/src/osi3_bridge/msg/MovingObject.msg;/home/student/Desktop/Redge_Thesis/vil/src/osi3_bridge/msg/GroundTruthMovingObjects.msg;/home/student/Desktop/Redge_Thesis/vil/src/osi3_bridge/msg/TrafficUpdateMovingObject.msg")
+set(osi3_bridge_SERVICE_FILES "")

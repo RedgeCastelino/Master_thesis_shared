@@ -1,0 +1,115 @@
+<launch>
+
+
+    <!-- Scenario parameters-->
+    <arg name="vel" default="40" />
+    <arg name="scenario" default="1" />
+    <arg name="carla_host" default="10.116.64.77" />
+    <arg name="carla_port" default="2000" />
+    <arg name="cam_width" default="1280" />
+    <arg name="cam_height" default="720" />
+    <arg name="verbose" default="0" />
+    <arg name="delay" default="2.0" />
+    <arg name="delay_rqt" default="13.0" />
+    <arg name="info" default="0" />
+
+
+    <param name = "des_vel" type = "double" value = "40"/>           <!-- Desired velocity of the EGO [Km/h] 40.0-->
+    <param name = "scenario" type = "double" value = "1)"/>           <!-- -->
+    <param name = "carla_host" type = "string" value = "10.116.64.77"/>           <!-- -->
+    <param name = "carla_port" type = "string" value = "$(arg carla_port)"/>           <!-- -->
+    <param name = "cam_width" type = "int" value = "$(arg cam_width)"/>           <!-- -->
+    <param name = "cam_height" type = "int" value = "$(arg cam_height)"/>           <!-- -->
+    <param name = "verbose" type = "int" value = "$(arg verbose)"/>           <!-- -->
+
+
+    <node pkg="aeb" type="EURO_NCAP.py" name="EURO_NCAP_scenario" output="screen"/>
+    <!--node pkg="rosbag" type="record" name="rosbag_record" args=" -O /home/drechsler/vil/rosbag_record/$(arg scenario)_$(arg vel) /sensor0/obj_list_egoframe /aeb_status /osi3_moving_obj /adma_data /sensor0/objs_list /controller_input /imagetimer /ego_data_bag " launch-prefix="bash -c 'sleep $(arg delay); $0 $@' "/-->
+
+
+
+<!--   -->
+
+  <!--arg name="model" default="$(find object_list)/urdf/prius.urdf"/-->
+  <!--arg name="gui" default="false" /-->
+  <!--arg name="rvizconfig" default="$(find object_list)/rviz/urdf.rviz" /-->
+  <!--arg name="groundtruth" default="true" /-->
+  <!--arg name="camera" default="false" /-->
+
+  <!--param name="robot_description" command="$(find xacro)/xacro $(arg model)" /-->
+
+  <!--node if="$(arg gui)" name="joint_state_publisher" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" /-->
+  <!--node unless="$(arg gui)" name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /-->
+  <!--node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /-->
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" /-->
+
+  <!--node pkg="object_list" name="Object_Visualization" type="Objectlist_Visualization.py" output="screen" /-->
+    <param name = "freq" type = "double" value = "100.0"/>             <!-- Desired frequency of Framework running (ros.rate) [Hz] 100.0-->
+
+
+    <group ns="/sensor0">
+
+   	    <param name = "freq" type = "double" value = "100.0"/>
+	    <param name = "posx" type = "double" value = "0.0"/> <!-- Meters -->
+	    <param name = "posy" type = "double" value = "0.0"/> <!-- Meters -->
+	    <param name = "angle" type = "double" value = "120"/> <!-- Field of view in grad -->
+	    <param name = "senrange" type = "double" value = "100"/>  <!-- Meters -->
+	    <param name = "yaw" type = "double" value = "0.0"/>
+
+
+	    <param name = "sensortype" type = "double" value = "5"/> <!-- enter 0:radar , 1:camera/Lidar, 5:Ideal sensor -->
+
+
+	    <param name = "rangerr" type = "double" value = "0.2"/> <!-- For radar only -->
+        <param name = "velerr" type = "double" value = "0.1"/> <!-- For radar only -->
+        <param name = "azierr" type = "double" value = "0.1"/> <!-- For radar only -->
+        <param name = "posxerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
+        <param name = "posyerr" type = "double" value = "0.1"/> <!-- For camera/lidar only -->
+        <param name = "sm_num_msg" type = "double" value = "30"/>
+        <param name = "sm_sinc_time" type = "double" value = "0.5"/>           <!-- -->
+        <node pkg="sensor_model" type = "sensor_model.py" name="sensor0"/>
+        <param name = "s2e_num_msg" type = "double" value = "40"/>
+        <param name = "s2e_sinc_time" type = "double" value = "0.5"/>           <!-- -->
+        <node name="Sensor2Ego" pkg="sensor_model" type="sensor2Ego.py"  />
+
+
+    </group>
+
+    <param name = "fw_acc" type = "double" value = "4.0"/>       <!-- Deceleration provided by a normal driver [m/s^2] -->
+    <param name = "stg1_acc" type = "double" value = "3.0"/>     <!-- Deceleration provided by the first severity stage [m/s^2] 2.0-->
+    <param name = "stg2_acc" type = "double" value = "5.0"/>     <!-- Deceleration provided by the second severity stage [m/s^2] 3.0-->
+    <param name = "stg3_acc" type = "double" value = "9.81"/>     <!-- Deceleration provided by the third severity stage [m/s^2] 5.0-->
+    <param name = "driver_react" type = "double" value = "1.2"/>  <!-- Reaction time of a normal driver [s] -->
+    <param name = "aeb_react" type = "double" value = "0.5"/>    <!-- Reaction time of the AEB system [s] -->
+    <param name = "offsetx" type = "double" value = "6.0"/>      <!-- Offset kept as safety between the follower and the leader [m] 3.7-->
+    <param name = "lat_rang" type = "double" value = "1.6"/>     <!-- Lateral range of evaluation [m] 1.5-->
+    <param name = "vil" type = "bool" value = "false"/>
+    <param name = "traj_length" type = "double" value = "250"/>     <!-- Maximal trajectory length [m] -->
+    <param name = "max_traj_time" type = "double" value = "2.0"/>     <!-- Future time send iin the trajectory [s] 10.0-->
+    <param name = "offset_multiplier" type = "double" value = "1.0"/> <!-- Permits to increase the "Following" and "Stop" areas when compared with the Stop time-->
+    <param name = "percentage_extra_time" type = "double" value = "0.0"/>   <!-- Permits to increase the "Following" and "Stop" areas when compared with the Stop time-->
+    <param name = "traj_freq" type = "double" value = "100"/>   <!-- Frequency used to divide the points in the trajectory vector-->
+    <param name = "max_decel" type = "double" value = "8.0"/>   <!-- Permits to increase the "Following" and "Stop" areas when compared with the Stop time-->
+    <param name = "max_acc" type = "double" value = "6.0"/>   <!-- Frequency used to divide the points in the trajectory vector-->
+
+
+
+    <param name = "aeb_num_msg" type = "double" value = "50"/>
+    <param name = "aeb_sinc_time" type = "double" value = "1.0"/>
+    <!--node pkg="aeb" type = "aeb_AMS2_backup.py" name="aeb"  output="screen" required="true"/-->
+
+    <!--node pkg="aeb" type = "aeb_AMS2.py" name="aeb"  output="screen" required="true"/-->
+    <node pkg="object_list" type = "CARLAOSIbridge.py" name="CARLA_bridge" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' "/>
+    <!--node pkg="vehicle_control" type = "vehicle.py" name="simulated_vehicle" output="screen"/-->
+    <!--node pkg="object_list" type = "Record.py" name="Record"/-->
+    <!--node pkg="rosbag" type="record" name="rosbag_record" args=" -o /home/drechsler/vil/rosbag_record/ /sensor0/obj_list_egoframe /aeb_status /osi3_moving_obj /ego_data_bag" /-->
+    <!--node pkg="object_list" type="ego_bag.py" name="ego_bag" /-->
+    <node pkg="object_list" type = "CARLAOSIbridge_update.py" name="CARLAOSI_bridge_update" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' "/>
+    <!--node pkg="vehicle_control" type = "vehicle_runner_AMS.py" name="vehicle_runner"  output="screen" /-->
+
+    <group if="$(eval arg('info') ==1)">
+        <!--node name="Vehicle_plot" pkg="rqt_plot" type="rqt_plot" args="/ego_data/object/acceleration/x /ego_data/object/acceleration/y /ego_data/object/velocity/x /ego_data/object/velocity/y /aeb_status/aeb_status" launch-prefix="bash -c 'sleep $(arg delay_rqt); $0 $@' " /-->
+    </group>
+
+
+</launch>
